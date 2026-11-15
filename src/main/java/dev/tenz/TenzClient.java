@@ -25,7 +25,7 @@ public class TenzClient implements ClientModInitializer {
 
         KeyMapping.Category cat = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("tenz", "main"));
         KeyMapping open = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.tenz.open", InputConstants.KEY_RIGHT_SHIFT, cat));
+        "key.tenz.open", InputConstants.KEY_RSHIFT, cat));
         KeyMapping auction = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.tenz.auction", InputConstants.KEY_K, cat));
         KeyMapping donors = KeyMappingHelper.registerKeyMapping(new KeyMapping(
