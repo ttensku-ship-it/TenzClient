@@ -13,6 +13,6 @@ public final class Tx {
         new FontDescription.Resource(Identifier.fromNamespaceAndPath("tenz", "ui")));
 
     public static Component c(String s) { return Component.literal(s).setStyle(STYLE); }
-    public static void draw(GuiGraphicsExtractor g, Font f, String s, int x, int y, int color) { Tx.draw(g, f, c(s), x, y, color); }
+    public static void draw(GuiGraphicsExtractor g, Font f, String s, int x, int y, int color) { g.text(f, c(s), x, y, color); }
     public static int w(Font f, String s) { return f.width(c(s)); }
 }
