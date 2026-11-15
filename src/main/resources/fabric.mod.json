@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "tenz",
+  "version": "${version}",
+  "name": "Tenz",
+  "description": "Tenz client: clean HUDs, auction overlay, custom skies, smooth placing.",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.tenz.TenzClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.3",
+    "fabric-api": "*"
+  },
+  "mixins": [
+    "tenz.mixins.json"
+  ]
+}
