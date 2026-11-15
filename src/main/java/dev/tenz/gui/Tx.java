@@ -13,6 +13,9 @@ public final class Tx {
         new FontDescription.Resource(Identifier.fromNamespaceAndPath("tenz", "ui")));
 
     public static Component c(String s) { return Component.literal(s).setStyle(STYLE); }
-    public static void draw(GuiGraphicsExtractor g, Font f, String s, int x, int y, int color) { g.text(f, c(s), x, y, color); }
+    /** Menus: clean text, no drop shadow. */
+    public static void draw(GuiGraphicsExtractor g, Font f, String s, int x, int y, int color) { g.text(f, c(s), x, y, color, false); }
+    /** HUD overlays: keeps a soft shadow so text stays readable over the world. */
+    public static void hud(GuiGraphicsExtractor g, Font f, String s, int x, int y, int color) { g.text(f, c(s), x, y, color, true); }
     public static int w(Font f, String s) { return f.width(c(s)); }
 }

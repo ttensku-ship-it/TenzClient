@@ -17,12 +17,17 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
 
 public class TenzClient implements ClientModInitializer {
-    private static final Pattern PAID = Pattern.compile("(\\w{3,16}) paid you \\$([\\d.,]+)\\s*([KMBTkmbt]?)");
+    private static final Pattern PAID = Pattern.compile("(\\w{3,16}) (?:paid|sent|gave) you \\$([\\d.,]+)\\s*([KMBTkmbt]?)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PAID2 = Pattern.compile("you (?:received|were paid|got) \\$([\\d.,]+)\\s*([KMBTkmbt]?) from (\\w{3,16})", Pattern.CASE_INSENSITIVE);
 
     @Override
     public void onInitializeClient() {
         Modules.load();
         Payments.loadHistory();
+        // Writes tenz-api-dump.txt into the game folder once, so the sky / placement hooks can be fitted.
+        try {
+            if (!java.nio.file.Files.exists(net.fabricmc.loader.api.FabricLoader.getInstance().getGameDir().resolve("tenz-api-dump.txt"))) ApiDump.run();
+        } catch (Throwable ignored) {}
 
         KeyMapping.Category cat = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("tenz", "main"));
         KeyMapping open = KeyMappingHelper.registerKeyMapping(new KeyMapping(
@@ -43,10 +48,13 @@ public class TenzClient implements ClientModInitializer {
         // Real payments: chat lines like "Name paid you $10M"
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
             if (overlay) return;
-            Matcher m = PAID.matcher(message.getString());
-            if (m.find()) {
-                try { Payments.add(m.group(1), Payments.parse(m.group(2), m.group(3))); } catch (NumberFormatException ignored) {}
-            }
+            String msg = message.getString();
+            try {
+                Matcher m = PAID.matcher(msg);
+                if (m.find()) { Payments.add(m.group(1), Payments.parse(m.group(2), m.group(3))); return; }
+                Matcher m2 = PAID2.matcher(msg);
+                if (m2.find()) Payments.add(m2.group(3), Payments.parse(m2.group(1), m2.group(2)));
+            } catch (NumberFormatException ignored) {}
         });
 
         ClientCommandRegistrationCallback.EVENT.register((d, ctx) -> d.register(

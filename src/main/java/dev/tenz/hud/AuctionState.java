@@ -9,6 +9,7 @@ public final class AuctionState {
     public static String topBidder = "-";
     public static double topBid = 0;
     public static long endsAtMs = 0;
+    public static long durationMs = 1;
 
     public static void start(ItemStack s, int qty, int seconds) {
         stack = s.copyWithCount(1);
@@ -17,6 +18,7 @@ public final class AuctionState {
     public static void start(String name, int seconds) {
         item = name; topBidder = "-"; topBid = 0;
         endsAtMs = System.currentTimeMillis() + seconds * 1000L;
+        durationMs = Math.max(1, seconds * 1000L);
     }
     public static boolean active() { return System.currentTimeMillis() < endsAtMs; }
     public static void bid(String who, double amount) {

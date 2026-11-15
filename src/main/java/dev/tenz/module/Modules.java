@@ -23,6 +23,7 @@ public final class Modules {
     public static final List<Module> ALL = List.of(FPS, KEYS, AUCTION, SKY, SMOOTH, ALIEN, PAYMENTS, FEED, BANNER, LEGEND, RAIN, SLOTS, WANTED);
     public static String skyPreset = "Galaxy";
     public static int themeIndex = 0;
+    public static int uiScale = 100; // menu size in percent: 100 / 125 / 150
     public static boolean alienHooked = false;
 
     private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("tenz.properties");
@@ -33,6 +34,8 @@ public final class Modules {
             Properties p = new Properties(); p.load(in);
             for (Module m : ALL) m.enabled = Boolean.parseBoolean(p.getProperty(m.name, String.valueOf(m.enabled)));
             skyPreset = p.getProperty("skyPreset", skyPreset);
+            try { uiScale = Integer.parseInt(p.getProperty("uiScale", "100")); } catch (NumberFormatException ignored3) {}
+            if (uiScale != 100 && uiScale != 125 && uiScale != 150) uiScale = 100;
             try { themeIndex = Integer.parseInt(p.getProperty("theme", "0")); } catch (NumberFormatException ignored2) {}
         } catch (IOException ignored) {}
     }
@@ -41,6 +44,7 @@ public final class Modules {
         for (Module m : ALL) p.setProperty(m.name, String.valueOf(m.enabled));
         p.setProperty("skyPreset", skyPreset);
         p.setProperty("theme", String.valueOf(themeIndex));
+        p.setProperty("uiScale", String.valueOf(uiScale));
         try (var out = Files.newOutputStream(FILE)) { p.store(out, "Tenz"); } catch (IOException ignored) {}
     }
 }

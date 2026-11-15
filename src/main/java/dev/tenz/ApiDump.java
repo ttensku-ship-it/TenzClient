@@ -21,7 +21,11 @@ public final class ApiDump {
             || s.equals("BlockRenderDispatcher.class") || s.equals("ModelBlockRenderer.class")
             || s.equals("SectionRenderDispatcher.class") || s.equals("SectionCompiler.class")
             || s.equals("FogRenderer.class") || s.equals("Camera.class") || s.equals("LevelTargetBundle.class")
-            || s.equals("CameraRenderState.class") || s.equals("BlockModelPart.class");
+            || s.equals("CameraRenderState.class") || s.equals("BlockModelPart.class")
+            || s.equals("ItemInHandRenderer.class") || s.equals("ItemModelResolver.class")
+            || s.equals("ItemStackRenderState.class") || s.equals("ItemRenderer.class")
+            || s.equals("ItemDisplayContext.class") || s.equals("ItemInHandLayer.class")
+            || s.equals("GameRenderer.class") || s.equals("ItemTransform.class");
     }
 
     private static void scan(Class<?> anchor, StringBuilder sb, List<String> names) throws Exception {

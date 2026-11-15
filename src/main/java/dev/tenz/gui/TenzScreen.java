@@ -15,7 +15,7 @@ import net.minecraft.network.chat.Component;
 
 /** Sidebar (MODULES / GENERAL) + greeting header, clock, module search, rounded cards with toggle switches. */
 public class TenzScreen extends Screen {
-    private static final String[] MODULES = {"Tracker", "Auction", "HUD", "Visuals", "Fun", "Capes"};
+    private static final String[] MODULES = {"Tracker", "Auction", "HUD", "Visuals", "Fun"};
     private static final String[] GENERAL = {"Appearance", "Audio", "Configs", "Settings"};
     private static final String[] SKIES = {"Galaxy", "Orbit", "Iris", "Velvet", "Twilight", "Silver"};
     private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("h:mm a");
@@ -32,8 +32,14 @@ public class TenzScreen extends Screen {
 
     public TenzScreen() { super(Component.literal("Tenz")); }
 
-    private int left() { return width / 2 - W / 2; }
-    private int top()  { return height / 2 - H / 2; }
+    /** Menu size from Settings, shrunk if the window is too small to fit it. */
+    private float sc() {
+        float want = Modules.uiScale / 100f;
+        float fit = Math.min(width / (W + 10f), height / (H + 10f));
+        return Math.max(0.5f, Math.min(want, fit));
+    }
+    private int left() { return (int) (width / sc()) / 2 - W / 2; }
+    private int top()  { return (int) (height / sc()) / 2 - H / 2; }
 
     @Override
     protected void init() {
@@ -93,7 +99,12 @@ public class TenzScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
         Theme t = Theme.current();
         btns.clear();
-        lmx = mx; lmy = my;
+        float sc = sc();
+        lmx = (int) (mx / sc); lmy = (int) (my / sc);
+        search.setX(left() + W - 118); search.setY(top() + 12);
+        var pose = g.pose();
+        pose.pushMatrix();
+        pose.scale(sc, sc);
         int x = left(), y = top();
         glass(g, x, y, W, H, t.bg());
 
@@ -145,11 +156,13 @@ public class TenzScreen extends Screen {
                 btns.add(new Btn(cx, cy, cw, 24, () -> { Modules.themeIndex = idx; Modules.save(); }));
                 cy += 27;
             }
-        } else if (Arrays.asList("Capes", "Audio", "Configs", "Settings").contains(tab)) {
+        } else if (Arrays.asList("Audio", "Configs").contains(tab)) {
             String s = tab + " is coming soon";
             Tx.draw(g, font, s, cx + (cw - Tx.w(font, s)) / 2, y + H / 2, t.dim());
         } else if (tab.equals("Tracker")) {
             tracker(g, t, cx, cy, cw);
+        } else if (tab.equals("Settings")) {
+            settings(g, t, cx, cy, cw);
         } else {
             if (tab.equals("Auction")) {
                 rr(g, cx, cy, cw, 24, t.panel());
@@ -167,7 +180,8 @@ public class TenzScreen extends Screen {
             Tx.draw(g, font, st, cx + 4, y + H - 14, Modules.alienHooked ? t.good() : t.dim());
         }
 
-        super.extractRenderState(g, mx, my, delta); // search box
+        super.extractRenderState(g, lmx, lmy, delta); // search box
+        pose.popMatrix();
     }
 
     private void sideItem(GuiGraphicsExtractor g, Theme t, String name, int x, int iy) {
@@ -210,6 +224,23 @@ public class TenzScreen extends Screen {
             }
         }
         return cy;
+    }
+
+    private void settings(GuiGraphicsExtractor g, Theme t, int cx, int cy, int cw) {
+        rr(g, cx, cy, cw, 54, t.panel());
+        ring(g, cx, cy, cw, 54, 0x22FFFFFF);
+        Tx.draw(g, font, "Menu size", cx + 8, cy + 7, t.text());
+        Tx.draw(g, font, "Makes the whole Tenz menu bigger or smaller", cx + 8, cy + 18, t.dim());
+        int[] opts = {100, 125, 150};
+        for (int i = 0; i < 3; i++) {
+            int pct = opts[i];
+            int bx = cx + 8 + i * 64;
+            boolean on = Modules.uiScale == pct;
+            rr(g, bx, cy + 32, 60, 15, on ? t.accent() : (over(bx, cy + 32, 60, 15) ? t.sel() : soft(t.accent(), 0x22)));
+            String l = pct + "%";
+            Tx.draw(g, font, l, bx + (60 - Tx.w(font, l)) / 2, cy + 35, on ? 0xFF000000 : t.text());
+            btns.add(new Btn(bx, cy + 32, 60, 15, () -> { Modules.uiScale = pct; Modules.save(); }));
+        }
     }
 
     // ---------------- Tracker tab ----------------
@@ -336,7 +367,12 @@ public class TenzScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent e, boolean dbl) {
-        for (Btn b : btns) if (b.hit(e.x(), e.y())) { b.action().run(); return true; }
-        return super.mouseClicked(e, dbl);
+        float sc = sc();
+        double mx = e.x() / sc, my = e.y() / sc;
+        for (Btn b : btns) if (b.hit(mx, my)) { b.action().run(); return true; }
+        boolean inSearch = mx >= left() + W - 124 && mx <= left() + W - 12 && my >= top() + 8 && my <= top() + 24;
+        setFocused(inSearch ? search : null);
+        search.setFocused(inSearch);
+        return inSearch;
     }
 }

@@ -32,7 +32,7 @@ public final class PayRender {
         pose.pushMatrix();
         pose.translate(cx, y);
         pose.scale(scale, scale);
-        Tx.draw(g, mc.font, s, -Tx.w(mc.font, s) / 2, 0, color);
+        Tx.hud(g, mc.font, s, -Tx.w(mc.font, s) / 2, 0, color);
         pose.popMatrix();
     }
 
@@ -54,8 +54,8 @@ public final class PayRender {
             g.fill(x, y, x + cw, y + ch, t.bg() | 0xE0000000);
             g.fill(x, y, x + 3, y + ch, tier);
             avatar(g, mc, p.name(), x + 8, y + 4, 18);
-            Tx.draw(g, mc.font, p.name(), x + 30, y + 4, t.text());
-            Tx.draw(g, mc.font, "+" + AuctionState.money(p.amount()), x + 30, y + 15, tier);
+            Tx.hud(g, mc.font, p.name(), x + 30, y + 4, t.text());
+            Tx.hud(g, mc.font, "+" + AuctionState.money(p.amount()), x + 30, y + 15, tier);
             i++;
         }
     }
@@ -80,7 +80,7 @@ public final class PayRender {
             float x = rnd(i, 1) * w;
             float y = (age * 0.12f * (0.6f + rnd(i, 2)) + rnd(i, 3) * h) % h;
             g.fill((int) x, (int) y, (int) x + 9, (int) y + 9, 0xFF2EAA4A);
-            Tx.draw(g, mc.font, "$", (int) x + 2, (int) y + 1, 0xFFFFFFFF);
+            Tx.hud(g, mc.font, "$", (int) x + 2, (int) y + 1, 0xFFFFFFFF);
         }
     }
 
