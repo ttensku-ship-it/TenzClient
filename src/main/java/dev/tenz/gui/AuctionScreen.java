@@ -55,7 +55,7 @@ public class AuctionScreen extends Screen {
         int x = left(), y = top();
         g.fill(x, y, x + 380, y + 240, t.bg());
         g.fill(x, y, x + 380, y + 2, t.accent());
-        g.text(font, "Auction", x + 10, y + 9, t.text());
+        Tx.draw(g, font, "Auction", x + 10, y + 9, t.text());
 
         button(g, t, x + 10, y + 22, 70, 14, "Inventory", inventoryTab, () -> { inventoryTab = true; page = 0; });
         button(g, t, x + 84, y + 22, 70, 14, "All items", !inventoryTab, () -> { inventoryTab = false; page = 0; });
@@ -77,23 +77,23 @@ public class AuctionScreen extends Screen {
         button(g, t, gx, py, 20, 14, "<", false, () -> page = Math.max(0, page - 1));
         button(g, t, gx + COLS * CELL - 20, py, 20, 14, ">", false, () -> page = Math.min(pages(items.size()) - 1, page + 1));
         String pg = (page + 1) + " / " + pages(items.size());
-        g.text(font, pg, gx + (COLS * CELL - font.width(pg)) / 2, py + 3, t.dim());
+        Tx.draw(g, font, pg, gx + (COLS * CELL - Tx.w(font, pg)) / 2, py + 3, t.dim());
 
         int rx = x + 190;
         g.fill(rx, y + 22, x + 370, y + 230, t.panel());
-        g.text(font, "Selected", rx + 8, y + 30, t.dim());
+        Tx.draw(g, font, "Selected", rx + 8, y + 30, t.dim());
         if (selected.isEmpty()) {
-            g.text(font, "Click an item", rx + 8, y + 46, t.text());
+            Tx.draw(g, font, "Click an item", rx + 8, y + 46, t.text());
         } else {
             g.item(selected, rx + 8, y + 42);
-            g.text(font, selected.getHoverName().getString(), rx + 30, y + 46, t.text());
+            Tx.draw(g, font, selected.getHoverName().getString(), rx + 30, y + 46, t.text());
         }
-        g.text(font, "Amount: " + qty, rx + 8, y + 70, t.text());
+        Tx.draw(g, font, "Amount: " + qty, rx + 8, y + 70, t.text());
         button(g, t, rx + 8, y + 82, 24, 14, "-1", false, () -> qty = Math.max(1, qty - 1));
         button(g, t, rx + 36, y + 82, 24, 14, "+1", false, () -> qty = Math.min(64, qty + 1));
         button(g, t, rx + 64, y + 82, 24, 14, "+8", false, () -> qty = Math.min(64, qty + 8));
 
-        g.text(font, "Time", rx + 8, y + 108, t.dim());
+        Tx.draw(g, font, "Time", rx + 8, y + 108, t.dim());
         for (int i = 0; i < TIMES.length; i++) {
             int s = TIMES[i];
             String label = s < 60 ? s + "s" : (s / 60) + "m";
@@ -102,7 +102,7 @@ public class AuctionScreen extends Screen {
         boolean ready = !selected.isEmpty();
         g.fill(rx + 8, y + 196, x + 362, y + 218, ready ? t.accent() : t.sel());
         String go = ready ? "Start auction" : "Pick an item first";
-        g.text(font, go, rx + 8 + (172 - font.width(go)) / 2, y + 203, ready ? 0xFF000000 : t.dim());
+        Tx.draw(g, font, go, rx + 8 + (172 - Tx.w(font, go)) / 2, y + 203, ready ? 0xFF000000 : t.dim());
         if (ready) btns.add(new Btn(rx + 8, y + 196, 172, 22, () -> {
             AuctionState.start(selected, qty, seconds);
             minecraft.setScreenAndShow(null);
@@ -113,7 +113,7 @@ public class AuctionScreen extends Screen {
         boolean hv = lmx >= x && lmx <= x + w && lmy >= y && lmy <= y + h;
         g.fill(x - 1, y - 1, x + w + 1, y + h + 1, on ? t.accent() : (hv ? ((t.accent() & 0xFFFFFF) | 0x99000000) : t.panel()));
         g.fill(x, y, x + w, y + h, on ? t.accent() : (hv ? t.sel() : t.panel()));
-        g.text(font, label, x + (w - font.width(label)) / 2, y + (h - 8) / 2, on ? 0xFF000000 : t.text());
+        Tx.draw(g, font, label, x + (w - Tx.w(font, label)) / 2, y + (h - 8) / 2, on ? 0xFF000000 : t.text());
         btns.add(new Btn(x, y, w, h, r));
     }
 

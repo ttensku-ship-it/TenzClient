@@ -22,10 +22,11 @@ public class TenzClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         Modules.load();
+        Payments.loadHistory();
 
         KeyMapping.Category cat = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("tenz", "main"));
         KeyMapping open = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-        "key.tenz.open", InputConstants.KEY_RSHIFT, cat));
+            "key.tenz.open", InputConstants.KEY_RIGHT_SHIFT, cat));
         KeyMapping auction = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.tenz.auction", InputConstants.KEY_K, cat));
         KeyMapping donors = KeyMappingHelper.registerKeyMapping(new KeyMapping(

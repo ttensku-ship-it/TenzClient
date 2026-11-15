@@ -1,7 +1,10 @@
 package dev.tenz.fun;
 
 import dev.tenz.module.Modules;
+import java.io.IOException;
+import java.nio.file.*;
 import java.util.*;
+import net.fabricmc.loader.api.FabricLoader;
 
 /** Payment events: feed, banners, jackpots. Fed by chat ("X paid you $10M"), /tenz pay, or a future donation hookup. */
 public final class Payments {
@@ -15,11 +18,39 @@ public final class Payments {
     public static long rainAt = 0, rainMs = 0;
     private static final List<Pending> pending = new ArrayList<>();
 
-    public static void add(String name, double amt) {
+    /** Every payment received, oldest first. Real ones are saved to config/tenz-payments.csv so Day/Week survive restarts. */
+    public static final List<Pay> history = new ArrayList<>();
+    public static final long sessionStart = System.currentTimeMillis();
+    private static final Path HIST = FabricLoader.getInstance().getConfigDir().resolve("tenz-payments.csv");
+
+    public static void loadHistory() {
+        if (!Files.exists(HIST)) return;
+        try {
+            for (String line : Files.readAllLines(HIST)) {
+                String[] a = line.split(",");
+                if (a.length == 3) {
+                    try { history.add(new Pay(a[1], Double.parseDouble(a[2]), Long.parseLong(a[0]))); } catch (NumberFormatException ignored) {}
+                }
+            }
+        } catch (IOException ignored) {}
+    }
+
+    private static void persist(Pay p) {
+        try {
+            Files.writeString(HIST, p.t() + "," + p.name() + "," + p.amount() + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (IOException ignored) {}
+    }
+
+    public static void add(String name, double amt) { add(name, amt, true); }
+
+    public static void add(String name, double amt, boolean real) {
         long now = System.currentTimeMillis();
         totals.merge(name, amt, Double::sum);
         totalRaised += amt;
         Pay p = new Pay(name, amt, now);
+        history.add(p);
+        if (history.size() > 20000) history.remove(0);
+        if (real) persist(p);
         boolean newBiggest = amt > biggest;
         if (newBiggest) biggest = amt;
         if (!Modules.PAYMENTS.enabled) return;
@@ -58,7 +89,7 @@ public final class Payments {
         long now = System.currentTimeMillis();
         for (Iterator<Pending> it = pending.iterator(); it.hasNext(); ) {
             Pending p = it.next();
-            if (now >= p.at()) { it.remove(); add(p.name(), p.amount()); }
+            if (now >= p.at()) { it.remove(); add(p.name(), p.amount(), false); }
         }
     }
 }

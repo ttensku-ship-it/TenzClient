@@ -18,7 +18,7 @@ public class DonorsScreen extends Screen {
         g.fill(x - 2, y - 2, x + pw + 2, y + ph + 2, 0xFFC8A020);
         g.fill(x, y, x + pw, y + ph, 0xF0101018);
         String title = "TOP DONATORS";
-        g.text(font, title, x + (pw - font.width(title)) / 2, y + 8, 0xFFFFD700);
+        Tx.draw(g, font, title, x + (pw - Tx.w(font, title)) / 2, y + 8, 0xFFFFD700);
         List<Map.Entry<String, Double>> top = Payments.totals.entrySet().stream()
             .sorted((a, b) -> Double.compare(b.getValue(), a.getValue())).limit(8).toList();
         int[] order = {1, 0, 2};
@@ -31,26 +31,26 @@ public class DonorsScreen extends Screen {
             int base = y + 100;
             int bh = heights[c];
             g.fill(cx - 24, base - bh, cx + 24, base, colors[c]);
-            g.text(font, ranks[c], cx - font.width(ranks[c]) / 2, base - bh + 4, 0xFF000000);
+            Tx.draw(g, font, ranks[c], cx - Tx.w(font, ranks[c]) / 2, base - bh + 4, 0xFF000000);
             if (idx < top.size()) {
                 var e = top.get(idx);
                 g.fill(cx - 10, base - bh - 24, cx + 10, base - bh - 4, 0xFF8A6048);
-                g.text(font, e.getKey(), cx - font.width(e.getKey()) / 2, base + 4, t.text());
+                Tx.draw(g, font, e.getKey(), cx - Tx.w(font, e.getKey()) / 2, base + 4, t.text());
                 String m = AuctionState.money(e.getValue());
-                g.text(font, m, cx - font.width(m) / 2, base + 14, t.good());
+                Tx.draw(g, font, m, cx - Tx.w(font, m) / 2, base + 14, t.good());
             }
         }
         for (int i = 3; i < 8; i++) {
             int ry = y + 134 + (i - 3) * 16;
-            g.text(font, "#" + (i + 1), x + 12, ry, t.dim());
+            Tx.draw(g, font, "#" + (i + 1), x + 12, ry, t.dim());
             if (i < top.size()) {
                 var e = top.get(i);
-                g.text(font, e.getKey(), x + 40, ry, t.text());
+                Tx.draw(g, font, e.getKey(), x + 40, ry, t.text());
                 String m = AuctionState.money(e.getValue());
-                g.text(font, m, x + pw - 12 - font.width(m), ry, t.good());
+                Tx.draw(g, font, m, x + pw - 12 - Tx.w(font, m), ry, t.good());
             }
         }
-        g.text(font, "TOTAL RAISED: " + AuctionState.money(Payments.totalRaised), x + 12, y + ph - 16, 0xFFFFD700);
-        g.text(font, "[ESC] close", x + pw - 12 - font.width("[ESC] close"), y + ph - 16, t.dim());
+        Tx.draw(g, font, "TOTAL RAISED: " + AuctionState.money(Payments.totalRaised), x + 12, y + ph - 16, 0xFFFFD700);
+        Tx.draw(g, font, "[ESC] close", x + pw - 12 - Tx.w(font, "[ESC] close"), y + ph - 16, t.dim());
     }
 }
