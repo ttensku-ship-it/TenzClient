@@ -105,7 +105,7 @@ public class AuctionScreen extends Screen {
         g.text(font, go, rx + 8 + (172 - font.width(go)) / 2, y + 203, ready ? 0xFF000000 : t.dim());
         if (ready) btns.add(new Btn(rx + 8, y + 196, 172, 22, () -> {
             AuctionState.start(selected, qty, seconds);
-            minecraft.setScreen(null);
+            minecraft.setScreenAndShow(null);
         }));
     }
 

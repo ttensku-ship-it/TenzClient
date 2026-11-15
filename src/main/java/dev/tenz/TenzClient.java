@@ -15,7 +15,6 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
 
 public class TenzClient implements ClientModInitializer {
     private static final Pattern PAID = Pattern.compile("(\\w{3,16}) paid you \\$([\\d.,]+)\\s*([KMBTkmbt]?)");
@@ -26,15 +25,15 @@ public class TenzClient implements ClientModInitializer {
 
         KeyMapping.Category cat = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("tenz", "main"));
         KeyMapping open = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.tenz.open", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, cat));
+            "key.tenz.open", InputConstants.KEY_RIGHT_SHIFT, cat));
         KeyMapping auction = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.tenz.auction", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, cat));
+            "key.tenz.auction", InputConstants.KEY_K, cat));
         KeyMapping donors = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.tenz.donors", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_O, cat));
+            "key.tenz.donors", InputConstants.KEY_O, cat));
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
-            while (open.consumeClick()) mc.setScreen(new TenzScreen());
-            while (auction.consumeClick()) mc.setScreen(new AuctionScreen());
-            while (donors.consumeClick()) mc.setScreen(new DonorsScreen());
+            while (open.consumeClick()) mc.setScreenAndShow(new TenzScreen());
+            while (auction.consumeClick()) mc.setScreenAndShow(new AuctionScreen());
+            while (donors.consumeClick()) mc.setScreenAndShow(new DonorsScreen());
         });
 
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("tenz", "overlays"),

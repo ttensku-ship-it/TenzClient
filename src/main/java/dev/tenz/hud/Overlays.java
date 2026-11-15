@@ -9,7 +9,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 public final class Overlays {
     public static void render(GuiGraphicsExtractor g) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.options.hideGui) return;
         Theme t = Theme.current();
         if (Modules.FPS.enabled) {
             g.fill(6, 6, 56, 20, t.bg());

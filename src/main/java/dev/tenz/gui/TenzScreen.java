@@ -125,7 +125,7 @@ public class TenzScreen extends Screen {
                 g.text(font, "Open auction menu", cx + 8, cy + 4, t.text());
                 g.text(font, "Pick an item and start an auction", cx + 8, cy + 14, t.dim());
                 rr(g, cx + cw - 32, cy + 6, 24, 12, t.accent());
-                btns.add(new Btn(cx, cy, cw, 24, () -> minecraft.setScreen(new AuctionScreen())));
+                btns.add(new Btn(cx, cy, cw, 24, () -> minecraft.setScreenAndShow(new AuctionScreen())));
                 cy += 27;
             }
             for (Module m : Modules.ALL) if (m.category.equals(tab)) cy = card(g, t, m, cx, cy, cw);
