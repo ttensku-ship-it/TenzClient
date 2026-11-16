@@ -50,7 +50,7 @@ public final class Payments {
         Pay p = new Pay(name, amt, now);
         history.add(p);
         if (history.size() > 20000) history.remove(0);
-        if (real) persist(p);
+        if (real) { persist(p); Balance.added(amt); }
         boolean newBiggest = amt > biggest;
         if (newBiggest) biggest = amt;
         if (!Modules.PAYMENTS.enabled) return;

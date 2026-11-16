@@ -20,6 +20,9 @@ public class TenzClient implements ClientModInitializer {
     private static final Pattern PAID = Pattern.compile("(\\w{3,16}) (?:paid|sent|gave) you \\$([\\d.,]+)\\s*([KMBTkmbt]?)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PAID2 = Pattern.compile("you (?:received|were paid|got) \\$([\\d.,]+)\\s*([KMBTkmbt]?) from (\\w{3,16})", Pattern.CASE_INSENSITIVE);
 
+    // "You have $ 13,619,634"  /  "Balance: $1.2M"
+    private static final Pattern BAL = Pattern.compile("(?:you have|balance:?|bal:?)\\s*\\$\\s*(\\d+(?:[.,]\\d+)*)\\s*([KMBTkmbt]?)\\b", Pattern.CASE_INSENSITIVE);
+
     @Override
     public void onInitializeClient() {
         Modules.load();
@@ -36,7 +39,13 @@ public class TenzClient implements ClientModInitializer {
             "key.tenz.auction", InputConstants.KEY_K, cat));
         KeyMapping donors = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.tenz.donors", InputConstants.KEY_O, cat));
+        KeyMapping trick = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.tenz.trick", InputConstants.KEY_R, cat));
+        KeyMapping trickRandom = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.tenz.trick_random", InputConstants.KEY_V, cat));
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
+            while (trick.consumeClick()) dev.tenz.fun.Tricks.play(Modules.knifeTrick);
+            while (trickRandom.consumeClick()) dev.tenz.fun.Tricks.play("Random");
             while (open.consumeClick()) mc.setScreenAndShow(new TenzScreen());
             while (auction.consumeClick()) mc.setScreenAndShow(new AuctionScreen());
             while (donors.consumeClick()) mc.setScreenAndShow(new DonorsScreen());
@@ -49,6 +58,10 @@ public class TenzClient implements ClientModInitializer {
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
             if (overlay) return;
             String msg = message.getString();
+            try {
+                Matcher mb = BAL.matcher(msg);
+                if (mb.find()) { dev.tenz.fun.Balance.set(Payments.parse(mb.group(1), mb.group(2))); return; }
+            } catch (NumberFormatException ignored) {}
             try {
                 Matcher m = PAID.matcher(msg);
                 if (m.find()) { Payments.add(m.group(1), Payments.parse(m.group(2), m.group(3))); return; }
@@ -67,6 +80,12 @@ public class TenzClient implements ClientModInitializer {
                       c.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("Dump failed: " + e));
                   }
                   return 1; }))
+              .then(ClientCommands.literal("bal")
+                .then(ClientCommands.argument("amount", StringArgumentType.word()).executes(c -> {
+                    Matcher m = Pattern.compile("([\\d.,]+)([KMBTkmbt]?)").matcher(StringArgumentType.getString(c, "amount").replace("$", ""));
+                    if (!m.matches()) return 0;
+                    try { dev.tenz.fun.Balance.set(Payments.parse(m.group(1), m.group(2))); } catch (NumberFormatException e) { return 0; }
+                    return 1; })))
               .then(ClientCommands.literal("demo").executes(c -> { Payments.demo(); return 1; }))
               .then(ClientCommands.literal("pay")
                 .then(ClientCommands.argument("name", StringArgumentType.word())

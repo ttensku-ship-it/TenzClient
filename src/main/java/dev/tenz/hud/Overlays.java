@@ -38,6 +38,7 @@ public final class Overlays {
         fps(g, mc, t);
         keys(g, mc, t);
         auction(g, mc, t);
+        stack(g, mc, t);
         dev.tenz.fun.PayRender.render(g, mc, t);
     }
 
@@ -89,6 +90,130 @@ public final class Overlays {
             int bh = Math.max(1, (int) (fpsHist[i] / mx * 9f));
             g.fill(sx + i, y + 12 - bh, sx + i + 1, y + 12, Draw.a(col, e * 0.85f));
         }
+    }
+
+    // ---------------- Balance / tracker / coords / clock (left column, under the auction card) ----------------
+    private static float balA, trkA, crdA, clkA, balFlash;
+    private static double balShown = -1, balLast = -1;
+    private static final java.time.format.DateTimeFormatter CLK = java.time.format.DateTimeFormatter.ofPattern("h:mm:ss a");
+
+    private static void stack(GuiGraphicsExtractor g, Minecraft mc, Theme t) {
+        balA = approach(balA, Modules.BALANCE.enabled ? 1f : 0f, 10f);
+        trkA = approach(trkA, Modules.TRACKER.enabled ? 1f : 0f, 10f);
+        crdA = approach(crdA, Modules.COORDS.enabled && mc.player != null ? 1f : 0f, 10f);
+        clkA = approach(clkA, Modules.CLOCK.enabled ? 1f : 0f, 10f);
+        // slide down smoothly when the auction card is showing
+        int y = 88 + (int) (58 * ease(aucSlide));
+
+        if (balA > 0.02f) { y += balance(g, mc, t, y, ease(balA)); }
+        if (trkA > 0.02f) { y += tracker(g, mc, t, y, ease(trkA)); }
+        if (crdA > 0.02f && mc.player != null) {
+            String s = "XYZ  " + (int) Math.floor(mc.player.getX()) + "  " + (int) Math.floor(mc.player.getY()) + "  " + (int) Math.floor(mc.player.getZ());
+            y += pill(g, mc, t, y, s, ease(crdA));
+        }
+        if (clkA > 0.02f) { y += pill(g, mc, t, y, java.time.LocalTime.now().format(CLK).toLowerCase(), ease(clkA)); }
+    }
+
+    /** Small one-line pill; returns the height it used (including the gap). */
+    private static int pill(GuiGraphicsExtractor g, Minecraft mc, Theme t, int y, String s, float e) {
+        int w = Tx.w(mc.font, s) + 16, h = 16;
+        int x = 6 + (int) ((1f - e) * -16);
+        Draw.rr(g, x, y, w, h, Draw.a(t.bg(), e));
+        Draw.ring(g, x, y, w, h, Draw.a(0x44FFFFFF, e));
+        Tx.hud(g, mc.font, s, x + 8, y + 4, Draw.a(t.text(), e));
+        return (int) ((h + 4) * e);
+    }
+
+    private static int balance(GuiGraphicsExtractor g, Minecraft mc, Theme t, int y, float e) {
+        boolean known = dev.tenz.fun.Balance.known();
+        double v = known ? dev.tenz.fun.Balance.value : 0;
+        if (balShown < 0) balShown = v;
+        if (v != balLast) { if (v > balLast && balLast >= 0) balFlash = 1f; balLast = v; }
+        balFlash = approach(balFlash, 0f, 3f);
+        balShown += (v - balShown) * (1f - Math.exp(-8f * dt));
+        if (Math.abs(v - balShown) < 1) balShown = v;
+
+        String val = known ? dev.tenz.fun.Balance.full(balShown) : "waiting...";
+        String sub = known ? "Balance" : "run /bal or /tenz bal <amount>";
+        int w = Math.max(100, Tx.w(mc.font, val) + 20), h = 30;
+        int x = 6 + (int) ((1f - e) * -16);
+        Draw.rr(g, x, y, w, h, Draw.a(t.bg(), e));
+        Draw.ring(g, x, y, w, h, Draw.a(Draw.lerp(0x44FFFFFF, t.good(), balFlash), e));
+        g.fill(x + 1, y + 4, x + 3, y + h - 4, Draw.a(t.accent(), e));
+        Tx.hud(g, mc.font, sub, x + 10, y + 5, Draw.a(t.dim(), e));
+        if (known && dev.tenz.fun.Balance.sessionChange() != 0) {
+            double d = dev.tenz.fun.Balance.sessionChange();
+            String ds = (d > 0 ? "+" : "-") + AuctionState.money(Math.abs(d));
+            Tx.hud(g, mc.font, ds, x + w - 8 - Tx.w(mc.font, ds), y + 5, Draw.a(d > 0 ? t.good() : 0xFFFF6B6B, e));
+        }
+        Tx.hud(g, mc.font, val, x + 10, y + 17, Draw.a(Draw.lerp(t.text(), t.good(), balFlash), e));
+        return (int) ((h + 4) * e);
+    }
+
+    private static float trkSign = 0f, trkDelta = 0f;
+    private static double trkShown = -1;
+    private static final int RED = 0xFFFF5A5A;
+
+    /** Balance tracker: your balance, how far you are up (green) or down (red) this session, and a graph of it. */
+    private static int tracker(GuiGraphicsExtractor g, Minecraft mc, Theme t, int y, float e) {
+        boolean known = dev.tenz.fun.Balance.known();
+        double bal = known ? dev.tenz.fun.Balance.value : 0;
+        double delta = dev.tenz.fun.Balance.sessionChange();
+        if (trkShown < 0) trkShown = bal;
+        trkShown += (bal - trkShown) * (1f - Math.exp(-8f * dt));
+        if (Math.abs(bal - trkShown) < 1) trkShown = bal;
+        trkDelta += (float) ((delta - trkDelta) * (1f - Math.exp(-8f * dt)));
+        float target = delta > 0 ? 1f : delta < 0 ? -1f : 0f;
+        trkSign = approach(trkSign, target, 8f);
+        int tint = Draw.lerp(t.text(), trkSign >= 0 ? t.good() : RED, Math.min(1f, Math.abs(trkSign)));
+
+        int w = 144, h = 58;
+        int x = 6 + (int) ((1f - e) * -16);
+        Draw.rr(g, x, y, w, h, Draw.a(t.bg(), e));
+        Draw.ring(g, x, y, w, h, Draw.a(Draw.lerp(0x44FFFFFF, tint, Math.abs(trkSign) * 0.6f), e));
+        g.fill(x + 1, y + 4, x + 3, y + h - 4, Draw.a(known ? tint : t.accent(), e));
+
+        Tx.hud(g, mc.font, "Tracker", x + 10, y + 5, Draw.a(t.dim(), e));
+        String right = !known ? "" : (delta > 0 ? "UP" : delta < 0 ? "DOWN" : "EVEN");
+        Tx.hud(g, mc.font, right, x + w - 8 - Tx.w(mc.font, right), y + 5, Draw.a(tint, e));
+
+        String balS = known ? dev.tenz.fun.Balance.full(trkShown) : "waiting...";
+        Tx.hud(g, mc.font, balS, x + 10, y + 17, Draw.a(known ? t.text() : t.dim(), e));
+        if (known) {
+            double d = trkDelta;
+            String ds = (d >= 0 ? "+" : "-") + AuctionState.money(Math.abs(d));
+            Tx.hud(g, mc.font, ds, x + w - 8 - Tx.w(mc.font, ds), y + 17, Draw.a(tint, e));
+        } else {
+            Tx.hud(g, mc.font, "run /bal or /tenz bal <amount>", x + 10, y + 30, Draw.a(t.dim(), e));
+        }
+
+        // graph of the balance this session: columns above the start line are green, below are red
+        int gx = x + 10, gy = y + 31, gw = w - 20, gh = 20;
+        var hist = dev.tenz.fun.Balance.hist;
+        if (known && hist.size() >= 1) {
+            double t0 = hist.get(0)[0], t1 = Math.max(t0 + 60_000d, System.currentTimeMillis());
+            double base = dev.tenz.fun.Balance.sessionStart;
+            double lo = base, hi = base;
+            for (double[] smp : hist) { lo = Math.min(lo, smp[1]); hi = Math.max(hi, smp[1]); }
+            double range = Math.max(1d, hi - lo);
+            int baseY = gy + (int) Math.round((hi - base) / range * (gh - 1));
+            int idx = 0;
+            double cur = hist.get(0)[1];
+            for (int px = 0; px < gw; px++) {
+                double tt = t0 + (t1 - t0) * (px + 1) / gw;
+                while (idx < hist.size() && hist.get(idx)[0] <= tt) { cur = hist.get(idx)[1]; idx++; }
+                int vy = gy + (int) Math.round((hi - cur) / range * (gh - 1));
+                boolean up = cur >= base;
+                int col = up ? t.good() : RED;
+                int top = Math.min(vy, baseY), bot = Math.max(vy, baseY) + 1;
+                g.fill(gx + px, top, gx + px + 1, bot, Draw.a(col, e * 0.55f));
+                g.fill(gx + px, vy, gx + px + 1, vy + 1, Draw.a(col, e));
+            }
+            g.fill(gx, baseY, gx + gw, baseY + 1, Draw.a(0x55FFFFFF, e));
+        } else if (known) {
+            g.fill(gx, gy + gh / 2, gx + gw, gy + gh / 2 + 1, Draw.a(0x55FFFFFF, e));
+        }
+        return (int) ((h + 4) * e);
     }
 
     // ---------------- Keystrokes ----------------

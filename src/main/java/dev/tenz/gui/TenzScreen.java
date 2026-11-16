@@ -15,11 +15,11 @@ import net.minecraft.network.chat.Component;
 
 /** Sidebar (MODULES / GENERAL) + greeting header, clock, module search, rounded cards with toggle switches. */
 public class TenzScreen extends Screen {
-    private static final String[] MODULES = {"Tracker", "Auction", "HUD", "Visuals", "Fun"};
+    private static final String[] MODULES = {"Tracker", "Auction", "HUD", "Visuals", "Knives", "Fun"};
     private static final String[] GENERAL = {"Appearance", "Audio", "Configs", "Settings"};
     private static final String[] SKIES = {"Galaxy", "Orbit", "Iris", "Velvet", "Twilight", "Silver"};
     private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("h:mm a");
-    private static final int W = 420, H = 258;
+    private static final int W = 420, H = 276;
 
     private static String tab = "HUD";
     private static String view = "Tracker";
@@ -115,7 +115,7 @@ public class TenzScreen extends Screen {
         rr(g, x + 13, y + 13, 16, 16, 0xFF14141A);
         Tx.draw(g, font, "T", x + 19, y + 17, t.text());
         Tx.draw(g, font, "Tenz", x + 36, y + 13, t.text());
-        Tx.draw(g, font, "v0.1.0", x + 36, y + 23, t.dim());
+        Tx.draw(g, font, "v0.3.1", x + 36, y + 23, t.dim());
 
         label(g, t, "MODULES", x + 14, y + 40);
         int iy = y + 52;
@@ -145,16 +145,18 @@ public class TenzScreen extends Screen {
             for (Module m : Modules.ALL)
                 if (m.name.toLowerCase().contains(q) || m.description.toLowerCase().contains(q)) cy = card(g, t, m, cx, cy, cw);
         } else if (tab.equals("Appearance")) {
+            int cols = 3, gap = 4, cell = (cw - gap * (cols - 1)) / cols;
             for (int i = 0; i < Theme.ALL.size(); i++) {
-                Theme th = Theme.ALL.get(i);
+                Theme th = Theme.ALL.get(i).live();
                 int idx = i;
-                rr(g, cx, cy, cw, 24, th == t ? t.sel() : t.panel());
-                Tx.draw(g, font, th.name(), cx + 8, cy + 8, t.text());
-                rr(g, cx + cw - 70, cy + 7, 14, 10, th.bg() | 0xFF000000);
-                rr(g, cx + cw - 52, cy + 7, 14, 10, th.sel() | 0xFF000000);
-                rr(g, cx + cw - 34, cy + 7, 14, 10, th.accent());
-                btns.add(new Btn(cx, cy, cw, 24, () -> { Modules.themeIndex = idx; Modules.save(); }));
-                cy += 27;
+                int bx = cx + (i % cols) * (cell + gap), by = cy + (i / cols) * 28;
+                boolean on = th.name().equals(t.name());
+                rr(g, bx, by, cell, 24, on ? t.sel() : (over(bx, by, cell, 24) ? t.sel() : t.panel()));
+                ring(g, bx, by, cell, 24, on ? soft(t.accent(), 0xEE) : 0x22FFFFFF);
+                rr(g, bx + 6, by + 7, 10, 10, th.accent());
+                rr(g, bx + 18, by + 7, 4, 10, th.bg() | 0xFF000000);
+                Tx.draw(g, font, th.name(), bx + 27, by + 8, t.text());
+                btns.add(new Btn(bx, by, cell, 24, () -> { Modules.themeIndex = idx; Modules.save(); }));
             }
         } else if (Arrays.asList("Audio", "Configs").contains(tab)) {
             String s = tab + " is coming soon";
@@ -173,6 +175,9 @@ public class TenzScreen extends Screen {
                 cy += 27;
             }
             for (Module m : Modules.ALL) if (m.category.equals(tab)) cy = card(g, t, m, cx, cy, cw);
+            if (tab.equals("Knives")) knives(g, t, cx, cy, cw);
+            if (tab.equals("HUD")) hudPreview(g, t, cx, cy + 2, cw);
+            if (tab.equals("Visuals")) skyPreview(g, t, cx, cy + 2, cw);
         }
 
         if (tab.equals("Fun") && query.isEmpty()) {
@@ -224,6 +229,67 @@ public class TenzScreen extends Screen {
             }
         }
         return cy;
+    }
+
+    /** HUD tab footer: live numbers, so the tab is never just a few switches. */
+    private void hudPreview(GuiGraphicsExtractor g, Theme t, int cx, int cy, int cw) {
+        rr(g, cx, cy, cw, 44, t.panel());
+        ring(g, cx, cy, cw, 44, 0x22FFFFFF);
+        Tx.draw(g, font, "Live preview", cx + 8, cy + 6, t.dim());
+        String bal = dev.tenz.fun.Balance.known() ? dev.tenz.fun.Balance.full(dev.tenz.fun.Balance.value) : "not seen yet";
+        Tx.draw(g, font, "Balance", cx + 8, cy + 20, t.dim());
+        Tx.draw(g, font, bal, cx + 8, cy + 30, t.text());
+        double d = dev.tenz.fun.Balance.sessionChange();
+        boolean kn = dev.tenz.fun.Balance.known();
+        String tr = !kn ? "-" : (d >= 0 ? "+" : "-") + AuctionState.money(Math.abs(d));
+        Tx.draw(g, font, "This session", cx + cw / 2, cy + 20, t.dim());
+        Tx.draw(g, font, tr, cx + cw / 2, cy + 30, !kn ? t.dim() : d > 0 ? t.good() : d < 0 ? 0xFFFF5A5A : t.text());
+    }
+
+    /** Visuals tab footer: the selected sky as a color strip that drifts like the real one. */
+    private void skyPreview(GuiGraphicsExtractor g, Theme t, int cx, int cy, int cw) {
+        rr(g, cx, cy, cw, 44, t.panel());
+        ring(g, cx, cy, cw, 44, 0x22FFFFFF);
+        Tx.draw(g, font, "Sky preview: " + Modules.skyPreset, cx + 8, cy + 6, t.dim());
+        int idx = dev.tenz.fun.SkyPresets.index(Modules.skyPreset);
+        int bw = cw - 16;
+        for (int i = 0; i < bw; i++) {
+            float k = (float) i / bw;
+            float[] c = dev.tenz.fun.SkyPresets.color(idx, k);
+            int col = 0xFF000000 | ((int) (c[0] * 255) << 16) | ((int) (c[1] * 255) << 8) | (int) (c[2] * 255);
+            g.fill(cx + 8 + i, cy + 20, cx + 9 + i, cy + 36, col);
+        }
+        int mk = cx + 8 + (int) (dev.tenz.fun.SkyPresets.drift() * (bw - 2));
+        g.fill(mk, cy + 18, mk + 2, cy + 38, 0xFFFFFFFF);
+    }
+
+    /** Knives tab: pick which trick the key plays, and how fast. */
+    private void knives(GuiGraphicsExtractor g, Theme t, int cx, int cy, int cw) {
+        rr(g, cx, cy, cw, 100, t.panel());
+        ring(g, cx, cy, cw, 100, 0x22FFFFFF);
+        Tx.draw(g, font, "Trick", cx + 8, cy + 7, t.text());
+        Tx.draw(g, font, "Plays when you press R (V = random). Hold a knife or any item.", cx + 8, cy + 18, t.dim());
+        String[] tricks = dev.tenz.fun.Tricks.NAMES;
+        int bw = (cw - 16 - 4 * (tricks.length - 1)) / tricks.length;
+        for (int i = 0; i < tricks.length; i++) {
+            String n = tricks[i];
+            int bx = cx + 8 + i * (bw + 4);
+            boolean on = n.equals(Modules.knifeTrick);
+            rr(g, bx, cy + 32, bw, 15, on ? t.accent() : (over(bx, cy + 32, bw, 15) ? t.sel() : soft(t.accent(), 0x22)));
+            Tx.draw(g, font, n, bx + (bw - Tx.w(font, n)) / 2, cy + 35, on ? 0xFF000000 : t.text());
+            btns.add(new Btn(bx, cy + 32, bw, 15, () -> { Modules.knifeTrick = n; Modules.save(); }));
+        }
+        Tx.draw(g, font, "Speed", cx + 8, cy + 56, t.text());
+        String[] speeds = dev.tenz.fun.Tricks.SPEEDS;
+        for (int i = 0; i < speeds.length; i++) {
+            String n = speeds[i];
+            int bx = cx + 8 + i * 64;
+            boolean on = n.equals(Modules.knifeSpeed);
+            rr(g, bx, cy + 70, 60, 15, on ? t.accent() : (over(bx, cy + 70, 60, 15) ? t.sel() : soft(t.accent(), 0x22)));
+            Tx.draw(g, font, n, bx + (60 - Tx.w(font, n)) / 2, cy + 73, on ? 0xFF000000 : t.text());
+            btns.add(new Btn(bx, cy + 70, 60, 15, () -> { Modules.knifeSpeed = n; Modules.save(); }));
+        }
+        Tx.draw(g, font, "Change the keys in Options > Controls > Tenz", cx + 8, cy + 89, t.dim());
     }
 
     private void settings(GuiGraphicsExtractor g, Theme t, int cx, int cy, int cw) {

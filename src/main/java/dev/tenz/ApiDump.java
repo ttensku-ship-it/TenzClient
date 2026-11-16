@@ -12,26 +12,14 @@ public final class ApiDump {
     private static boolean wanted(String n) {
         if (!n.endsWith(".class")) return false;
         String s = n.substring(n.lastIndexOf('/') + 1);
-        if (n.startsWith("net/fabricmc/fabric/api/client/rendering/")) return true;
-        if (n.equals("com/mojang/blaze3d/vertex/PoseStack.class")) return true;
-        if (!n.startsWith("net/minecraft/client/")) return false;
-        if (s.equals("FirstPersonHandsAndItemsRenderer.class") || s.equals("SubmitNodeCollector.class")
-            || s.equals("OrderedSubmitNodeCollector.class") || s.equals("TransientBlockRenderState.class")
-            || s.equals("BlockStateModel.class") || s.equals("BlockAndTintGetter.class")
-            || s.equals("ItemModel.class") || s.equals("BlockQuadOutput.class")
-            || s.equals("PlayerRenderState.class") || s.equals("Gui.class")) return true;
-        return s.contains("Sky") || s.equals("PlayerModel.class") || s.equals("HumanoidModel.class")
-            || s.equals("AvatarRenderer.class") || s.equals("AvatarRenderState.class")
-            || s.equals("LevelRenderer.class") || s.equals("LevelRenderState.class") || s.equals("ModelPart.class")
-            || s.equals("ClientLevel.class") || s.equals("MultiPlayerGameMode.class")
-            || s.equals("BlockRenderDispatcher.class") || s.equals("ModelBlockRenderer.class")
-            || s.equals("SectionRenderDispatcher.class") || s.equals("SectionCompiler.class")
-            || s.equals("FogRenderer.class") || s.equals("Camera.class") || s.equals("LevelTargetBundle.class")
-            || s.equals("CameraRenderState.class") || s.equals("BlockModelPart.class")
-            || s.equals("ItemInHandRenderer.class") || s.equals("ItemModelResolver.class")
-            || s.equals("ItemStackRenderState.class") || s.equals("ItemRenderer.class")
-            || s.equals("ItemDisplayContext.class") || s.equals("ItemInHandLayer.class")
-            || s.equals("GameRenderer.class") || s.equals("ItemTransform.class");
+        if (!n.startsWith("net/minecraft/client/") && !n.startsWith("com/mojang/blaze3d/vertex/")) return false;
+        return s.equals("MovingBlockRenderState.class") || s.equals("BlockModelPart.class")
+            || s.equals("BlockStateModelSet.class") || s.equals("BlockRenderDispatcher.class")
+            || s.equals("RenderTypes.class") || s.equals("BlockOutlineRenderState.class")
+            || s.equals("FirstPersonHandsAndItemsRenderState.class") || s.equals("BlockBreakingRenderState.class")
+            || s.equals("SubmitNodeCollector$CustomGeometryRenderer.class") || s.equals("VertexConsumer.class")
+            || s.equals("PoseStack$Pose.class") || s.equals("ClientPacketListener.class")
+            || s.equals("QuadInstance.class") || s.equals("BakedQuad.class");
     }
 
     private static void scan(Class<?> anchor, StringBuilder sb, List<String> names) throws Exception {
@@ -50,7 +38,6 @@ public final class ApiDump {
         StringBuilder sb = new StringBuilder("Minecraft + Fabric rendering API scan\n");
         List<String> names = new ArrayList<>();
         scan(Minecraft.class, sb, names);
-        scan(net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.class, sb, names);
         sb.append("classes found: ").append(names.size()).append("\n\n");
         for (String n : names) {
             String cn = n.substring(0, n.length() - 6).replace('/', '.');
