@@ -10,8 +10,8 @@ import net.minecraft.resources.Identifier;
 /** All Tenz text goes through here so it uses the font picked in Appearance. */
 public final class Tx {
     /** Fonts you can pick in Appearance. Each name is a file in assets/tenz/font (f_<name>.json). */
-    public static final String[] FONTS = {"Outfit", "Inter", "Instrument", "Work Sans", "Jura", "Minecraft"};
-    private static final String[] IDS = {"f_outfit", "f_inter", "f_instrument", "f_worksans", "f_jura", "f_minecraft"};
+    public static final String[] FONTS = {"Poppins", "Inter", "Outfit", "Work Sans", "Jura", "Minecraft"};
+    private static final String[] IDS = {"f_poppins", "f_inter", "f_outfit", "f_worksans", "f_jura", "f_minecraft"};
     private static final Style[] STYLES = new Style[IDS.length];
 
     private static Style style() {

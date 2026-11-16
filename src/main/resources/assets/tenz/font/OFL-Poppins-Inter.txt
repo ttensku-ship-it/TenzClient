@@ -1,0 +1,3 @@
+Poppins Bold: Copyright Indian Type Foundry, licensed under the SIL Open Font License 1.1 (https://openfontlicense.org).
+Inter ExtraBold: Copyright The Inter Project Authors, licensed under the SIL Open Font License 1.1.
+Both fonts are subset to Latin characters; Inter was converted to TrueType outlines.
