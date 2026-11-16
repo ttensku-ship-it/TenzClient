@@ -40,7 +40,8 @@ public final class BalancePoll {
         String cmd = Modules.balCmd == null ? "" : Modules.balCmd.replace("/", "").trim();
         if (cmd.isEmpty() || mc.level == null) return;
         try {
-            Object conn = mc.level.getConnection();
+            Object conn = mc.getConnection();
+            if (conn == null) return;
             conn.getClass().getMethod("sendCommand", String.class).invoke(conn, cmd);
             lastSentMs = System.currentTimeMillis();
         } catch (Exception e) {
