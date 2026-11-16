@@ -7,12 +7,21 @@ import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 
-/** All Tenz text goes through here so it uses the Poppins font (assets/tenz/font/ui.json). */
+/** All Tenz text goes through here so it uses the font picked in Appearance. */
 public final class Tx {
-    private static final Style STYLE = Style.EMPTY.withFont(
-        new FontDescription.Resource(Identifier.fromNamespaceAndPath("tenz", "ui")));
+    /** Fonts you can pick in Appearance. Each name is a file in assets/tenz/font (f_<name>.json). */
+    public static final String[] FONTS = {"Outfit", "Inter", "Instrument", "Work Sans", "Jura", "Minecraft"};
+    private static final String[] IDS = {"f_outfit", "f_inter", "f_instrument", "f_worksans", "f_jura", "f_minecraft"};
+    private static final Style[] STYLES = new Style[IDS.length];
 
-    public static Component c(String s) { return Component.literal(s).setStyle(STYLE); }
+    private static Style style() {
+        int i = Math.floorMod(dev.tenz.module.Modules.fontIndex, IDS.length);
+        if (STYLES[i] == null) STYLES[i] = Style.EMPTY.withFont(
+            new FontDescription.Resource(Identifier.fromNamespaceAndPath("tenz", IDS[i])));
+        return STYLES[i];
+    }
+
+    public static Component c(String s) { return Component.literal(s).setStyle(style()); }
     /** Menus: clean text, no drop shadow. */
     public static void draw(GuiGraphicsExtractor g, Font f, String s, int x, int y, int color) { g.text(f, c(s), x, y, color, false); }
     /** HUD overlays: keeps a soft shadow so text stays readable over the world. */

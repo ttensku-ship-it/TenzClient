@@ -44,6 +44,7 @@ public class TenzClient implements ClientModInitializer {
         KeyMapping trickRandom = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.tenz.trick_random", InputConstants.KEY_V, cat));
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
+            dev.tenz.fun.BalancePoll.tick(mc);
             while (trick.consumeClick()) dev.tenz.fun.Tricks.play(Modules.knifeTrick);
             while (trickRandom.consumeClick()) dev.tenz.fun.Tricks.play("Random");
             while (open.consumeClick()) mc.setScreenAndShow(new TenzScreen());
@@ -53,6 +54,19 @@ public class TenzClient implements ClientModInitializer {
 
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("tenz", "overlays"),
             (graphics, tick) -> Overlays.render(graphics));
+
+        // Balance reply to our automatic /bal: read it, then hide it from chat
+        ClientReceiveMessageEvents.ALLOW_GAME.register((message, overlay) -> {
+            if (overlay) return true;
+            try {
+                Matcher mb = BAL.matcher(message.getString());
+                if (mb.find()) {
+                    dev.tenz.fun.Balance.set(Payments.parse(mb.group(1), mb.group(2)));
+                    if (dev.tenz.fun.BalancePoll.recentlySent()) return false;
+                }
+            } catch (NumberFormatException ignored) {}
+            return true;
+        });
 
         // Real payments: chat lines like "Name paid you $10M"
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
@@ -80,6 +94,19 @@ public class TenzClient implements ClientModInitializer {
                       c.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("Dump failed: " + e));
                   }
                   return 1; }))
+              .then(ClientCommands.literal("auto")
+                .then(ClientCommands.argument("every", StringArgumentType.word()).executes(c -> {
+                    String v = StringArgumentType.getString(c, "every").toLowerCase();
+                    Modules.autoBal = switch (v) { case "30", "30s" -> "30s"; case "60", "1m", "1" -> "1 min"; case "120", "2m", "2" -> "2 min"; default -> "Off"; };
+                    dev.tenz.fun.BalancePoll.reset(); Modules.save();
+                    c.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("Auto balance: " + Modules.autoBal));
+                    return 1; })))
+              .then(ClientCommands.literal("balcmd")
+                .then(ClientCommands.argument("name", StringArgumentType.word()).executes(c -> {
+                    Modules.balCmd = StringArgumentType.getString(c, "name").replace("/", "");
+                    dev.tenz.fun.BalancePoll.reset(); Modules.save();
+                    c.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("Balance command: /" + Modules.balCmd));
+                    return 1; })))
               .then(ClientCommands.literal("bal")
                 .then(ClientCommands.argument("amount", StringArgumentType.word()).executes(c -> {
                     Matcher m = Pattern.compile("([\\d.,]+)([KMBTkmbt]?)").matcher(StringArgumentType.getString(c, "amount").replace("$", ""));

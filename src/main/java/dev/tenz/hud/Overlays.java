@@ -134,7 +134,7 @@ public final class Overlays {
         if (Math.abs(v - balShown) < 1) balShown = v;
 
         String val = known ? dev.tenz.fun.Balance.full(balShown) : "waiting...";
-        String sub = known ? "Balance" : "run /bal or /tenz bal <amount>";
+        String sub = known ? "Balance" : "waiting for balance...";
         int w = Math.max(100, Tx.w(mc.font, val) + 20), h = 30;
         int x = 6 + (int) ((1f - e) * -16);
         Draw.rr(g, x, y, w, h, Draw.a(t.bg(), e));
@@ -184,7 +184,9 @@ public final class Overlays {
             String ds = (d >= 0 ? "+" : "-") + AuctionState.money(Math.abs(d));
             Tx.hud(g, mc.font, ds, x + w - 8 - Tx.w(mc.font, ds), y + 17, Draw.a(tint, e));
         } else {
-            Tx.hud(g, mc.font, "run /bal or /tenz bal <amount>", x + 10, y + 30, Draw.a(t.dim(), e));
+            String hint = dev.tenz.fun.BalancePoll.failed ? "auto failed: use /tenz bal <amount>"
+                : Modules.autoBal.equals("Off") ? "run /bal or /tenz bal <amount>" : "reading your balance...";
+            Tx.hud(g, mc.font, hint, x + 10, y + 30, Draw.a(t.dim(), e));
         }
 
         // graph of the balance this session: columns above the start line are green, below are red

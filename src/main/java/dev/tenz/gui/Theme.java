@@ -31,16 +31,34 @@ public record Theme(String name, int bg, int panel, int sel, int accent, int tex
         mk("Lime", 0x99121E08, 0xB6FF3B, 0xFF9CB478, 0xFFE0FF8A),
         mk("Cyber", 0x990A0A1A, 0xFF2BD6, 0xFFA088C8, 0xFF00F0FF),
         mk("Slate", 0x9914181E, 0x9FB3C8, 0xFF7F8A96, 0xFF8AF0A0),
-        mk("Coffee", 0x99201510, 0xD2A679, 0xFFB09880, 0xFFB8FF8A)
+        mk("Coffee", 0x99201510, 0xD2A679, 0xFFB09880, 0xFFB8FF8A),
+        // black & white glass with drifting topographic lines and a silver sheen (drawn by HoloGlass)
+        new Theme("Holo Glass", 0x8C050505, 0x24FFFFFF, 0x4AFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFB4B4B4, 0xFFFFFFFF)
     );
 
     public static Theme current() {
         Theme t = ALL.get(Math.floorMod(Modules.themeIndex, ALL.size()));
-        return t.name.equals("Holographic") ? holo() : t;
+        if (t.name.equals("Holographic")) return holo();
+        if (t.name.equals("Holo Glass")) return holoGlass();
+        return t;
     }
 
     /** What to draw in a preview swatch (animated for Holographic). */
-    public Theme live() { return name.equals("Holographic") ? holo() : this; }
+    public Theme live() {
+        if (name.equals("Holographic")) return holo();
+        if (name.equals("Holo Glass")) return holoGlass();
+        return this;
+    }
+
+    /** Black and white glass whose white shimmers very slightly. */
+    private static Theme holoGlass() {
+        float k = 0.5f + 0.5f * (float) Math.sin((System.currentTimeMillis() % 6000L) / 6000.0 * Math.PI * 2);
+        int gray = 0xE8 + (int) (k * 0x17);
+        int acc = 0xFF000000 | (gray << 16) | (gray << 8) | gray;
+        int panel = ((0x20 + (int) (k * 0x0C)) << 24) | 0xFFFFFF;
+        int sel = ((0x44 + (int) (k * 0x10)) << 24) | 0xFFFFFF;
+        return new Theme("Holo Glass", 0x8C050505, panel, sel, acc, 0xFFFFFFFF, 0xFFB4B4B4, 0xFFFFFFFF);
+    }
 
     /** Time based colors, so it looks the same at any FPS. */
     private static Theme holo() {

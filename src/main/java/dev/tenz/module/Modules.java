@@ -29,7 +29,13 @@ public final class Modules {
     public static String skyPreset = "Galaxy";
     public static String knifeTrick = "Spin";
     public static String knifeSpeed = "Normal";
+    public static String autoBal = "1 min";
+    public static String balCmd = "bal";
+    public static String knifeModel = "None";
+    public static String knifeFinish = "Steel";
+    public static String knifeApply = "Swords & knives";
     public static int themeIndex = 0;
+    public static int fontIndex = 0;
     public static int uiScale = 100; // menu size in percent: 100 / 125 / 150
     public static boolean alienHooked = false;
 
@@ -43,9 +49,15 @@ public final class Modules {
             skyPreset = p.getProperty("skyPreset", skyPreset);
             knifeTrick = p.getProperty("knifeTrick", knifeTrick);
             knifeSpeed = p.getProperty("knifeSpeed", knifeSpeed);
+            autoBal = p.getProperty("autoBal", autoBal);
+            balCmd = p.getProperty("balCmd", balCmd);
+            knifeModel = p.getProperty("knifeModel", knifeModel);
+            knifeFinish = p.getProperty("knifeFinish", knifeFinish);
+            knifeApply = p.getProperty("knifeApply", knifeApply);
             try { uiScale = Integer.parseInt(p.getProperty("uiScale", "100")); } catch (NumberFormatException ignored3) {}
             if (uiScale != 100 && uiScale != 125 && uiScale != 150) uiScale = 100;
             try { themeIndex = Integer.parseInt(p.getProperty("theme", "0")); } catch (NumberFormatException ignored2) {}
+            try { fontIndex = Integer.parseInt(p.getProperty("font", "0")); } catch (NumberFormatException ignored3) {}
         } catch (IOException ignored) {}
     }
     public static void save() {
@@ -54,7 +66,13 @@ public final class Modules {
         p.setProperty("skyPreset", skyPreset);
         p.setProperty("knifeTrick", knifeTrick);
         p.setProperty("knifeSpeed", knifeSpeed);
+        p.setProperty("autoBal", autoBal);
+        p.setProperty("balCmd", balCmd);
+        p.setProperty("knifeModel", knifeModel);
+        p.setProperty("knifeFinish", knifeFinish);
+        p.setProperty("knifeApply", knifeApply);
         p.setProperty("theme", String.valueOf(themeIndex));
+        p.setProperty("font", String.valueOf(fontIndex));
         p.setProperty("uiScale", String.valueOf(uiScale));
         try (var out = Files.newOutputStream(FILE)) { p.store(out, "Tenz"); } catch (IOException ignored) {}
     }

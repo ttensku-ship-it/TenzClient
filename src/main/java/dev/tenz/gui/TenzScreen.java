@@ -107,6 +107,7 @@ public class TenzScreen extends Screen {
         pose.scale(sc, sc);
         int x = left(), y = top();
         glass(g, x, y, W, H, t.bg());
+        if (t.name().equals("Holo Glass")) HoloGlass.draw(g, x, y, W, H);
 
         // ---- sidebar ----
         rr(g, x + 6, y + 6, 108, H - 12, t.panel());
@@ -115,7 +116,7 @@ public class TenzScreen extends Screen {
         rr(g, x + 13, y + 13, 16, 16, 0xFF14141A);
         Tx.draw(g, font, "T", x + 19, y + 17, t.text());
         Tx.draw(g, font, "Tenz", x + 36, y + 13, t.text());
-        Tx.draw(g, font, "v0.3.1", x + 36, y + 23, t.dim());
+        Tx.draw(g, font, "v0.5.0", x + 36, y + 23, t.dim());
 
         label(g, t, "MODULES", x + 14, y + 40);
         int iy = y + 52;
@@ -157,6 +158,20 @@ public class TenzScreen extends Screen {
                 rr(g, bx + 18, by + 7, 4, 10, th.bg() | 0xFF000000);
                 Tx.draw(g, font, th.name(), bx + 27, by + 8, t.text());
                 btns.add(new Btn(bx, by, cell, 24, () -> { Modules.themeIndex = idx; Modules.save(); }));
+            }
+            // font picker (applies to the menu and the HUD)
+            int fy = cy + ((Theme.ALL.size() + cols - 1) / cols) * 28 + 4;
+            Tx.draw(g, font, "Font", cx, fy, t.dim());
+            String[] fonts = Tx.FONTS;
+            int fw = (cw - 4 * (fonts.length - 1)) / fonts.length;
+            for (int i = 0; i < fonts.length; i++) {
+                int idx = i;
+                int bx = cx + i * (fw + 4), by = fy + 12;
+                boolean on = i == Math.floorMod(Modules.fontIndex, fonts.length);
+                rr(g, bx, by, fw, 18, on ? t.accent() : (over(bx, by, fw, 18) ? t.sel() : t.panel()));
+                String n = fonts[i];
+                Tx.draw(g, font, n, bx + (fw - Tx.w(font, n)) / 2, by + 5, on ? 0xFF000000 : t.text());
+                btns.add(new Btn(bx, by, fw, 18, () -> { Modules.fontIndex = idx; Modules.save(); }));
             }
         } else if (Arrays.asList("Audio", "Configs").contains(tab)) {
             String s = tab + " is coming soon";
@@ -233,9 +248,15 @@ public class TenzScreen extends Screen {
 
     /** HUD tab footer: live numbers, so the tab is never just a few switches. */
     private void hudPreview(GuiGraphicsExtractor g, Theme t, int cx, int cy, int cw) {
-        rr(g, cx, cy, cw, 44, t.panel());
-        ring(g, cx, cy, cw, 44, 0x22FFFFFF);
+        rr(g, cx, cy, cw, 64, t.panel());
+        ring(g, cx, cy, cw, 64, 0x22FFFFFF);
         Tx.draw(g, font, "Live preview", cx + 8, cy + 6, t.dim());
+        Tx.draw(g, font, "Auto balance", cx + 8, cy + 47, t.dim());
+        String[] ch = dev.tenz.fun.BalancePoll.CHOICES;
+        for (int i = 0; i < ch.length; i++) {
+            String n = ch[i];
+            choice(g, t, cx + 76 + i * 52, cy + 43, 48, 16, n, n.equals(Modules.autoBal), () -> { Modules.autoBal = n; dev.tenz.fun.BalancePoll.reset(); Modules.save(); });
+        }
         String bal = dev.tenz.fun.Balance.known() ? dev.tenz.fun.Balance.full(dev.tenz.fun.Balance.value) : "not seen yet";
         Tx.draw(g, font, "Balance", cx + 8, cy + 20, t.dim());
         Tx.draw(g, font, bal, cx + 8, cy + 30, t.text());
@@ -263,33 +284,61 @@ public class TenzScreen extends Screen {
         g.fill(mk, cy + 18, mk + 2, cy + 38, 0xFFFFFFFF);
     }
 
-    /** Knives tab: pick which trick the key plays, and how fast. */
+    /** Small row of choice buttons. Returns nothing; clicking runs the setter. */
+    private void choice(GuiGraphicsExtractor g, Theme t, int x, int y, int w, int h, String label, boolean on, Runnable pick) {
+        rr(g, x, y, w, h, on ? t.accent() : (over(x, y, w, h) ? t.sel() : soft(t.accent(), 0x22)));
+        Tx.draw(g, font, label, x + (w - Tx.w(font, label)) / 2, y + (h - 8) / 2, on ? 0xFF000000 : t.text());
+        btns.add(new Btn(x, y, w, h, pick));
+    }
+
+    /** Knives tab: which knife model you hold, its finish, and the trick keys. */
     private void knives(GuiGraphicsExtractor g, Theme t, int cx, int cy, int cw) {
-        rr(g, cx, cy, cw, 100, t.panel());
-        ring(g, cx, cy, cw, 100, 0x22FFFFFF);
-        Tx.draw(g, font, "Trick", cx + 8, cy + 7, t.text());
-        Tx.draw(g, font, "Plays when you press R (V = random). Hold a knife or any item.", cx + 8, cy + 18, t.dim());
+        // ---- model ----
+        rr(g, cx, cy, cw, 104, t.panel());
+        ring(g, cx, cy, cw, 104, 0x22FFFFFF);
+        Tx.draw(g, font, "Knife model", cx + 8, cy + 6, t.text());
+        Tx.draw(g, font, "Only you see it. Hold a sword or knife.", cx + cw - 8 - Tx.w(font, "Only you see it. Hold a sword or knife."), cy + 6, t.dim());
+        String[] models = dev.tenz.fun.KnifeSkins.MODELS;
+        int per = 4, bw = (cw - 16 - 4 * (per - 1)) / per;
+        for (int i = 0; i < models.length; i++) {
+            String n = models[i];
+            int bx = cx + 8 + (i % per) * (bw + 4), by = cy + 19 + (i / per) * 19;
+            choice(g, t, bx, by, bw, 16, n, n.equals(Modules.knifeModel), () -> { Modules.knifeModel = n; Modules.save(); });
+        }
+        Tx.draw(g, font, "Finish", cx + 8, cy + 59, t.dim());
+        String[] fins = dev.tenz.fun.KnifeSkins.FINISHES;
+        int fw = (cw - 16 - 3 * (fins.length - 1)) / fins.length;
+        for (int i = 0; i < fins.length; i++) {
+            String n = fins[i];
+            choice(g, t, cx + 8 + i * (fw + 3), cy + 71, fw, 16, n, n.equals(Modules.knifeFinish), () -> { Modules.knifeFinish = n; Modules.save(); });
+        }
+        Tx.draw(g, font, "Applies to", cx + 8, cy + 91, t.dim());
+        String[] ap = dev.tenz.fun.KnifeSkins.APPLY;
+        for (int i = 0; i < ap.length; i++) {
+            String n = ap[i];
+            int aw = Tx.w(font, n) + 16;
+            int ax = cx + 62 + (i == 0 ? 0 : Tx.w(font, ap[0]) + 20);
+            choice(g, t, ax, cy + 87, aw, 15, n, n.equals(Modules.knifeApply), () -> { Modules.knifeApply = n; Modules.save(); });
+        }
+
+        // ---- tricks ----
+        int ty = cy + 110;
+        rr(g, cx, ty, cw, 62, t.panel());
+        ring(g, cx, ty, cw, 62, 0x22FFFFFF);
+        Tx.draw(g, font, "Trick", cx + 8, ty + 6, t.text());
+        Tx.draw(g, font, "R plays it, V plays a random one", cx + cw - 8 - Tx.w(font, "R plays it, V plays a random one"), ty + 6, t.dim());
         String[] tricks = dev.tenz.fun.Tricks.NAMES;
-        int bw = (cw - 16 - 4 * (tricks.length - 1)) / tricks.length;
+        int tw = (cw - 16 - 4 * (tricks.length - 1)) / tricks.length;
         for (int i = 0; i < tricks.length; i++) {
             String n = tricks[i];
-            int bx = cx + 8 + i * (bw + 4);
-            boolean on = n.equals(Modules.knifeTrick);
-            rr(g, bx, cy + 32, bw, 15, on ? t.accent() : (over(bx, cy + 32, bw, 15) ? t.sel() : soft(t.accent(), 0x22)));
-            Tx.draw(g, font, n, bx + (bw - Tx.w(font, n)) / 2, cy + 35, on ? 0xFF000000 : t.text());
-            btns.add(new Btn(bx, cy + 32, bw, 15, () -> { Modules.knifeTrick = n; Modules.save(); }));
+            choice(g, t, cx + 8 + i * (tw + 4), ty + 19, tw, 15, n, n.equals(Modules.knifeTrick), () -> { Modules.knifeTrick = n; Modules.save(); });
         }
-        Tx.draw(g, font, "Speed", cx + 8, cy + 56, t.text());
+        Tx.draw(g, font, "Speed", cx + 8, ty + 42, t.dim());
         String[] speeds = dev.tenz.fun.Tricks.SPEEDS;
         for (int i = 0; i < speeds.length; i++) {
             String n = speeds[i];
-            int bx = cx + 8 + i * 64;
-            boolean on = n.equals(Modules.knifeSpeed);
-            rr(g, bx, cy + 70, 60, 15, on ? t.accent() : (over(bx, cy + 70, 60, 15) ? t.sel() : soft(t.accent(), 0x22)));
-            Tx.draw(g, font, n, bx + (60 - Tx.w(font, n)) / 2, cy + 73, on ? 0xFF000000 : t.text());
-            btns.add(new Btn(bx, cy + 70, 60, 15, () -> { Modules.knifeSpeed = n; Modules.save(); }));
+            choice(g, t, cx + 50 + i * 54, ty + 38, 50, 15, n, n.equals(Modules.knifeSpeed), () -> { Modules.knifeSpeed = n; Modules.save(); });
         }
-        Tx.draw(g, font, "Change the keys in Options > Controls > Tenz", cx + 8, cy + 89, t.dim());
     }
 
     private void settings(GuiGraphicsExtractor g, Theme t, int cx, int cy, int cw) {
