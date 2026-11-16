@@ -13,7 +13,13 @@ public final class ApiDump {
         if (!n.endsWith(".class")) return false;
         String s = n.substring(n.lastIndexOf('/') + 1);
         if (n.startsWith("net/fabricmc/fabric/api/client/rendering/")) return true;
+        if (n.equals("com/mojang/blaze3d/vertex/PoseStack.class")) return true;
         if (!n.startsWith("net/minecraft/client/")) return false;
+        if (s.equals("FirstPersonHandsAndItemsRenderer.class") || s.equals("SubmitNodeCollector.class")
+            || s.equals("OrderedSubmitNodeCollector.class") || s.equals("TransientBlockRenderState.class")
+            || s.equals("BlockStateModel.class") || s.equals("BlockAndTintGetter.class")
+            || s.equals("ItemModel.class") || s.equals("BlockQuadOutput.class")
+            || s.equals("PlayerRenderState.class") || s.equals("Gui.class")) return true;
         return s.contains("Sky") || s.equals("PlayerModel.class") || s.equals("HumanoidModel.class")
             || s.equals("AvatarRenderer.class") || s.equals("AvatarRenderState.class")
             || s.equals("LevelRenderer.class") || s.equals("LevelRenderState.class") || s.equals("ModelPart.class")

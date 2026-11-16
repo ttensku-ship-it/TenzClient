@@ -2,6 +2,11 @@
   "required": false,
   "package": "dev.tenz.mixin",
   "compatibilityLevel": "JAVA_21",
-  "client": ["AbstractClientPlayerMixin"],
-  "injectors": { "defaultRequire": 0 }
+  "client": [
+    "AbstractClientPlayerMixin",
+    "SkyRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
 }
